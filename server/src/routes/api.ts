@@ -28,9 +28,12 @@ router.get('/users/:id', asyncHandler(async (req: Request, res: Response) => {
 
 // 3. POST /api/users - Create a new user (custom persona)
 router.post('/users', asyncHandler(async (req: Request, res: Response) => {
+  console.log(req.body);
   const { name, username, avatar } = req.body;
   if (!name || !username) {
-    return res.status(400).json({ error: 'Name and Username are required' });
+    const errRes = { error: 'Name and Username are required' };
+    console.log(errRes);
+    return res.status(400).json(errRes);
   }
 
   try {
@@ -40,10 +43,20 @@ router.post('/users', asyncHandler(async (req: Request, res: Response) => {
       [username, name, avatarUrl, 'custom', 0, 1]
     );
     const newUser = await dbGet('SELECT * FROM users WHERE id = ?', [result.id]);
-    res.status(201).json(newUser);
+    
+    const responseData = {
+      id: newUser.id,
+      name: newUser.name,
+      username: newUser.username
+    };
+    
+    console.log(responseData);
+    res.status(201).json(responseData);
   } catch (err: any) {
     if (err.message && err.message.includes('UNIQUE constraint failed')) {
-      return res.status(400).json({ error: 'Username is already taken' });
+      const errRes = { error: 'Username is already taken' };
+      console.log(errRes);
+      return res.status(400).json(errRes);
     }
     throw err;
   }

@@ -15,9 +15,8 @@ const PORT = process.env.PORT || 5000;
 // Security Middlewares
 app.use(helmet());
 app.use(cors({
-  origin: '*', // Allow all origins for dev/eval ease; restrict in production
-  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type']
+  origin: '*',
+  credentials: true
 }));
 app.use(express.json());
 app.use(rateLimiter);
@@ -28,6 +27,11 @@ app.use(express.static(clientBuildPath));
 
 // API router
 app.use('/api', apiRouter);
+
+// Catch-all API 404 handler
+app.all('/api/*', (req: Request, res: Response) => {
+  res.status(404).json({ error: 'API route not found' });
+});
 
 // Basic health check
 app.get('/health', (req: Request, res: Response) => {

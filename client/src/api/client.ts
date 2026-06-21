@@ -1,30 +1,40 @@
 import { User, FootprintBaseline, ActivityLog, Goal, Achievement, AIInsights } from '../types';
 
-const API_BASE = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '';
+const API_BASE = `${API_URL}/api`;
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
-  });
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.headers || {}),
+      },
+    });
 
-  if (!res.ok) {
-    let errMsg = `Request failed with status ${res.status}`;
+    const text = await res.text();
+    let data: any;
+
     try {
-      const errData = await res.json();
-      if (errData?.error) {
-        errMsg = typeof errData.error === 'string' ? errData.error : errData.error.message || errMsg;
-      }
-    } catch {
-      // ignore JSON parse error
+      data = text ? JSON.parse(text) : {};
+    } catch (parseErr) {
+      throw new Error(`Server returned invalid JSON: ${text}`);
     }
-    throw new Error(errMsg);
-  }
 
-  return res.json() as Promise<T>;
+    if (!res.ok) {
+      let errMsg = `HTTP ${res.status}`;
+      if (data && data.error) {
+        errMsg = typeof data.error === 'string' ? data.error : data.error.message || errMsg;
+      }
+      throw new Error(errMsg);
+    }
+
+    return data as T;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
 }
 
 export const apiClient = {
