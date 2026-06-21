@@ -242,8 +242,9 @@ export const LogPage: React.FC = () => {
             <div className="spinner"></div>
           </div>
         ) : error ? (
-          <div className="glass-card" style={{ border: '1px solid rgba(248,113,113,0.3)', padding: '24px', color: 'var(--color-critical)' }}>
-            {error}
+          <div className="glass-card" style={{ border: '1px solid rgba(248,113,113,0.3)', padding: '24px', color: 'var(--color-critical)', textAlign: 'center' }}>
+            <p style={{ marginBottom: '16px' }}>{error}</p>
+            <button className="btn btn-secondary" onClick={fetchLogs}>Retry</button>
           </div>
         ) : logs.length > 0 ? (
           <div className="table-wrapper">

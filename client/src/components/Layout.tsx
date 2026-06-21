@@ -5,6 +5,7 @@ import { User } from '../types';
 import { Navbar } from './Navbar';
 import { EcoAssistant } from './EcoAssistant';
 import { useTheme } from '../hooks/useTheme';
+import { ErrorBoundary } from './ErrorBoundary';
 
 export const Layout: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -92,7 +93,9 @@ export const Layout: React.FC = () => {
       <Navbar user={user} />
 
       <main className="main-content" style={{ flex: 1, position: 'relative', zIndex: 1 }}>
-        <Outlet context={{ user, refetchUser }} />
+        <ErrorBoundary>
+          <Outlet context={{ user, refetchUser }} />
+        </ErrorBoundary>
       </main>
 
       {/* Footer */}

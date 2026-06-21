@@ -4,14 +4,34 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 const API_BASE = `${API_URL}/api`;
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const timeoutMs = 15000; // 15 seconds timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  const method = options?.method || 'GET';
+  const payload = options?.body ? options.body : null;
+
+  console.log(`[API Request] => ${method} ${url}`, {
+    method,
+    url,
+    payload: payload ? (typeof payload === 'string' ? JSON.parse(payload) : payload) : null,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options?.headers || {}),
+    }
+  });
+
   try {
     const res = await fetch(url, {
       ...options,
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         ...(options?.headers || {}),
       },
     });
+
+    clearTimeout(timeoutId);
 
     const text = await res.text();
     let data: any;
@@ -19,8 +39,11 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     try {
       data = text ? JSON.parse(text) : {};
     } catch (parseErr) {
+      console.log(`[API Response] <= ${method} ${url} | Status: ${res.status} | Invalid JSON:`, text);
       throw new Error(`Server returned invalid JSON: ${text}`);
     }
+
+    console.log(`[API Response] <= ${method} ${url} | Status: ${res.status}`, data);
 
     if (!res.ok) {
       let errMsg = `HTTP ${res.status}`;
@@ -31,11 +54,18 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     }
 
     return data as T;
-  } catch (error) {
-    console.error('API request failed:', error);
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      const timeoutError = new Error(`Request timed out after ${timeoutMs}ms. The server might be waking up (cold start). Please try again.`);
+      console.error(`[API Timeout] ${method} ${url}:`, timeoutError);
+      throw timeoutError;
+    }
+    console.error(`[API Error] ${method} ${url}:`, error);
     throw error;
   }
 }
+
 
 export const apiClient = {
   // Users

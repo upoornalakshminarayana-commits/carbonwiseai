@@ -104,7 +104,8 @@ export const DashboardPage: React.FC = () => {
         const baselineData = await apiClient.getBaseline(parsedUserId);
         setBaseline(baselineData); setNoBaseline(false);
       } catch (err: any) {
-        if (err.message?.includes('404') || err.message?.includes('not found')) { setNoBaseline(true); setLoading(false); return; }
+        const errMsg = err.message?.toLowerCase() || '';
+        if (errMsg.includes('404') || errMsg.includes('not found')) { setNoBaseline(true); setLoading(false); return; }
         throw err;
       }
       const [goalData, logsData, insightsData] = await Promise.all([
@@ -188,9 +189,9 @@ export const DashboardPage: React.FC = () => {
   const getScoreColor = (v: number) => v >= 80 ? 'var(--color-excellent)' : v >= 60 ? 'var(--color-good)' : v >= 40 ? 'var(--color-average)' : v >= 25 ? 'var(--color-high)' : 'var(--color-critical)';
   const scoreColor = getScoreColor(score);
   const recentLogs = logs.slice(0, 10);
-  const reductionPct = Math.round(((baseline?.monthly_co2 || 0) - (insights?.projections.currentTrajectory || 0)) / (baseline?.monthly_co2 || 1) * 100);
+  const reductionPct = Math.round(((baseline?.monthly_co2 || 0) - (insights?.projections?.currentTrajectory || 0)) / (baseline?.monthly_co2 || 1) * 100);
   const activeGoals = goal && goal.status === 'active' ? 1 : 0;
-  const carbonSaved = Math.max(0, Math.round(((baseline?.monthly_co2 || 0) - (insights?.projections.currentTrajectory || 0)) * 10) / 10);
+  const carbonSaved = Math.max(0, Math.round(((baseline?.monthly_co2 || 0) - (insights?.projections?.currentTrajectory || 0)) * 10) / 10);
   const levelColor = user ? levelColors[Math.min(user.level - 1, levelColors.length - 1)] : 'var(--color-primary)';
 
   const getCategoryEmissions = () => {
@@ -216,7 +217,7 @@ export const DashboardPage: React.FC = () => {
     ].filter(c => c.value > 0);
   };
 
-  const trajectoryStatus = insights?.projections.status;
+  const trajectoryStatus = insights?.projections?.status;
   const trajectoryInfo = {
     on_track:       { text: 'On Track',        color: 'var(--color-excellent)', icon: <CheckIcon size={16} /> },
     off_track:      { text: 'Off Track',        color: 'var(--color-critical)',  icon: <GlobeIcon size={16} /> },

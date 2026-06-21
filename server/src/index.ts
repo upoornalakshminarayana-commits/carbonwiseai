@@ -15,11 +15,25 @@ const PORT = process.env.PORT || 5000;
 // Security Middlewares
 app.use(helmet());
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    // Reflect origin dynamically to support credentials: true
+    callback(null, true);
+  },
   credentials: true
 }));
 app.use(express.json());
 app.use(rateLimiter);
+
+// Detailed HTTP Request & Response Logging
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const start = Date.now();
+  console.log(`[HTTP Request] => ${req.method} ${req.url}`, req.method !== 'GET' ? { body: req.body } : '');
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[HTTP Response] <= ${req.method} ${req.url} | Status: ${res.statusCode} | Duration: ${duration}ms`);
+  });
+  next();
+});
 
 // Serve static frontend in production (optional hook)
 const clientBuildPath = path.resolve(__dirname, '../../client/dist');
